@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>토목기사 실기 말따먹기</title>
+  <style>
+    :root {
+      --primary: #e61e2b;
+      --primary-bg: #fff5f5;
+      --success: #4caf50;
+      --success-bg: #e8f5e9;
+      --danger: #f44336;
+      --danger-bg: #ffebee;
+      --text: #333333;
+      --gray-light: #f5f5f5;
+      --border: #e0e0e0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text); }
+    .phone-container { width: 100%; max-width: 420px; height: 100vh; max-height: 840px; background: #ffffff; box-shadow: 0 4px 20px rgba(0,0,0,0.15); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+    .screen { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background: white; }
+    .screen.active { display: flex; }
+    .header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-weight: bold; font-size: 18px; }
+    .header-left, .header-right { display: flex; align-items: center; gap: 16px; font-size: 20px; cursor: pointer; }
+    .header-logo { display: flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 800; color: #111; }
+    .logo-box { width: 20px; height: 20px; background: var(--primary); border-radius: 4px; position: relative; }
+    .logo-box::after { content: ''; position: absolute; top: 4px; left: 4px; width: 8px; height: 8px; background: white; border-radius: 1px; }
+    .content { flex: 1; overflow-y: auto; padding: 20px 16px; -webkit-overflow-scrolling: touch; }
+    
+    .main-title-box { text-align: center; margin: 30px 0 20px; }
+    .main-title { font-size: 26px; font-weight: 800; line-height: 1.3; color: #111; word-break: keep-all; }
+    
+    /* 유형 선택 UI */
+    .type-selector { margin-bottom: 20px; }
+    .type-label { font-size: 14px; color: #666; margin-bottom: 10px; text-align: center; font-weight: bold; }
+    .type-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 10px; }
+    .type-btn { padding: 12px; border: 1px solid var(--border); background: white; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #555; transition: 0.2s; }
+    .type-btn.active { background: #1976d2; color: white; border-color: #1976d2; }
+
+    /* 모달 팝업 UI */
+    .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index: 1000; }
+    .modal-box { background: white; padding: 24px; border-radius: 16px; width: 85%; max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .modal-box h3 { margin-bottom: 12px; font-size: 18px; text-align: center; }
+    .modal-box p { font-size: 13px; color: #666; margin-bottom: 20px; text-align: center; word-break: keep-all; line-height: 1.4; }
+    .range-inputs { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .range-inputs input { flex: 1; height: 44px; text-align: center; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; }
+    .modal-btns { display: flex; gap: 12px; }
+    .modal-btns button { flex: 1; height: 44px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .modal-btns button:first-child { background: var(--gray-light); color: #555; }
+
+    .qty-selector { background: var(--gray-light); border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; margin: 0 10px 24px; }
+    .qty-label { font-size: 14px; color: #666; margin-bottom: 12px; font-weight: bold; }
+    .qty-ctrl { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .btn-qty { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: white; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .qty-number { font-size: 24px; font-weight: bold; min-width: 80px; }
+    .btn-start { width: calc(100% - 20px); margin: 0 10px 40px; height: 52px; background: #1976d2; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    
+    .sub-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 16px; height: 36px; font-size: 14px; color: #666; }
+    .progress-track { flex: 1; height: 4px; background: var(--gray-light); border-radius: 2px; margin: 0 12px; position: relative; }
+    .progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #1976d2; width: 0%; transition: width 0.3s ease; border-radius: 2px; }
+    
+    .question-wrapper { margin-bottom: 24px; }
+    .star-badge { display: inline-block; background-color: #e1f5fe; color: #0288d1; font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 6px; margin-bottom: 12px; }
+    .question-num { font-size: 18px; font-weight: bold; color: var(--primary); margin-bottom: 8px; display: flex; align-items: baseline; gap: 6px; }
+    .question-num span { font-size: 13px; color: #888; font-weight: normal; }
+    .question-text { font-size: 16px; font-weight: bold; line-height: 1.5; margin-bottom: 8px; word-break: keep-all; white-space: pre-wrap; }
+    .question-guide { font-size: 13px; color: #1976d2; font-weight: bold; margin-bottom: 16px; }
+
+    .options-list { display: flex; flex-direction: column; gap: 12px; }
+    .option { display: flex; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; font-size: 15px; line-height: 1.4; transition: all 0.2s ease; }
+    .option-num { width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0; background: white; }
+    .option.selected { border-color: #1976d2; background-color: #f5f9ff; }
+    .option.selected .option-num { border-color: #1976d2; background-color: #1976d2; color: white; }
+    .option.correct { border-color: var(--success) !important; background-color: var(--success-bg) !important; }
+    .option.correct .option-num { border-color: var(--success) !important; background-color: var(--success) !important; color: white; }
+    .option.incorrect { border-color: var(--danger) !important; background-color: var(--danger-bg) !important; text-decoration: line-through; }
+    .option.incorrect .option-num { border-color: var(--danger) !important; background-color: var(--danger) !important; color: white; }
+
+    .multi-input-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .input-row { display: flex; align-items: center; gap: 8px; position: relative; }
+    .input-label { font-weight: bold; font-size: 14px; color: #555; width: 56px; flex-shrink: 0; text-align: right; }
+    .subj-input { flex: 1; height: 48px; padding: 0 16px; font-size: 15px; border: 1px solid var(--border); border-radius: 12px; transition: border-color 0.2s; }
+    .subj-input:focus { outline: none; border-color: #1976d2; background: #f5f9ff; }
+    .subj-input[readonly] { background: var(--gray-light); color: #555; border-color: transparent; }
+    
+    .input-status-icon { font-size: 18px; width: 24px; text-align: center; font-weight: bold; }
+    .input-status-icon.correct { color: var(--success); }
+    .input-status-icon.incorrect { color: var(--danger); }
+
+    .btn-idk { align-self: flex-end; padding: 8px 16px; background: #fff; border: 1px solid var(--danger); color: var(--danger); border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 12px; }
+    .btn-idk:active { background: var(--danger-bg); }
+
+    .explanation-box { margin-top: 24px; padding: 16px; background: var(--gray-light); border-radius: 12px; display: none; }
+    .exp-title { font-weight: bold; color: #333; margin-bottom: 6px; font-size: 14px; }
+    .exp-real-answer { font-size: 14px; font-weight: normal; color: #222; background: white; padding: 14px; border-radius: 8px; border: 1px solid var(--border); line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+
+    .footer-btn-area { padding: 16px; border-top: 1px solid var(--border); }
+    .btn-next { width: 100%; height: 48px; border-radius: 12px; border: 1px solid var(--border); background: #fdfdfd; color: #aaa; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-next.ready { background: #111; color: #fff; border-color: #111; }
+
+    .result-summary-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+    .result-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; }
+    .result-val { font-weight: bold; color: var(--primary); }
+    .result-header { font-size: 18px; font-weight: bold; margin-bottom: 16px; }
+    .review-card { border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; position: relative; }
+    .review-card.correct { border-color: var(--success); }
+    .review-card.incorrect { border-color: var(--danger); }
+    .badge { position: absolute; top: 12px; left: 12px; width: 24px; height: 24px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; }
+    .badge.correct { background: var(--success); }
+    .badge.incorrect { background: var(--danger); }
+    .review-q-text { font-size: 14px; font-weight: bold; margin-left: 32px; margin-bottom: 12px; line-height: 1.4; white-space: pre-wrap; display: flex; flex-direction: column; gap: 4px; }
+    .review-q-text span { font-size: 12px; color: #888; font-weight: normal; }
+    
+    .review-ans-row { display: flex; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 4px; }
+    .review-ans-label { width: 44px; color: #666; font-weight: bold; text-align: right; flex-shrink: 0; }
+    .review-ans-val { padding: 8px 10px; border-radius: 6px; flex: 1; border: 1px solid var(--border); font-weight: bold; }
+    .review-ans-val.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+    .review-ans-val.incorrect { background: var(--danger-bg); border-color: var(--danger); text-decoration: line-through; color: var(--danger); }
+    .review-exp { background: var(--gray-light); border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 13px; color: #333; line-height: 1.5; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+  <!-- 범위 설정 모달 팝업 -->
+  <div id="range-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>범위 설정</h3>
+      <p>1번부터 106번 사이의 문제 번호<br>범위를 입력하세요.</p>
+      <div class="range-inputs">
+        <input type="number" id="range-start" min="1" max="106" placeholder="시작">
+        <span style="font-weight:bold; color:#555;">~</span>
+        <input type="number" id="range-end" min="1" max="106" placeholder="끝">
+      </div>
+      <div class="modal-btns">
+        <button onclick="cancelRange()">취소</button>
+        <button onclick="applyRange()" style="background:#1976d2; color:white;">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-container">
+    <!-- 1. 메인 화면 -->
+    <div id="screen-main" class="screen active">
+      <div class="header">
+        <div class="header-logo"><div class="logo-box"></div>맞추다</div>
+        <div class="header-right">👤 ☰</div>
+      </div>
+      <div class="content">
+        <div class="main-title-box">
+          <h1 class="main-title">토목기사 실기 말따먹기</h1>
+        </div>
+        
+        <div class="type-selector">
+          <div class="type-label">문제 유형 선택</div>
+          <div class="type-buttons">
+            <button class="type-btn active" id="btn-type-all" onclick="openType('all')">전체문제</button>
+            <button class="type-btn" id="btn-type-obj" onclick="openType('obj')">객관식문제</button>
+            <button class="type-btn" id="btn-type-subj" onclick="openType('subj')">주관식문제</button>
+            <button class="type-btn" id="btn-type-range" onclick="openType('range')">범위문제</button>
+          </div>
+        </div>
+
+        <div class="qty-selector">
+          <div class="qty-label" id="qty-label-text">기출문제 출제 수 조절</div>
+          <div class="qty-ctrl">
+            <button class="btn-qty" onclick="adjustQty(-10)">-</button>
+            <span class="qty-number" id="qty-disp">20문제</span>
+            <button class="btn-qty" onclick="adjustQty(10)">+</button>
+          </div>
+        </div>
+        <button class="btn-start" onclick="startStudy()">학습 시작하기</button>
+      </div>
+    </div>
+
+    <!-- 2. 학습(문제) 화면 -->
+    <div id="screen-study" class="screen">
+      <div class="header">
+        <div class="header-left" onclick="goToMain()">✕</div>
+        <div>맞춤 학습</div>
+        <div class="header-right" style="opacity:0;">✕</div>
+      </div>
+      <div class="sub-bar">
+        <span id="progress-text">1 / 20</span>
+        <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
+        <span id="timer-text">00:00</span>
+      </div>
+      <div class="content" id="quiz-content" style="display: flex; flex-direction: column;"></div>
+      <div class="footer-btn-area">
+        <button class="btn-next ready" id="btn-submit" onclick="handleNext()">제출</button>
+      </div>
+    </div>
+
+    <!-- 3. 결과 화면 -->
+    <div id="screen-result" class="screen">
+      <div class="header">
+        <div class="header-left" onclick="goToMain()">✕</div>
+        <div>학습 결과</div>
+        <div class="header-right" style="opacity:0;">✕</div>
+      </div>
+      <div class="content" style="background-color: #f9fafb;">
+        <div class="result-header">학습 개요</div>
+        <div class="result-summary-card">
+          <div class="result-row"><span>총 문제 수</span><span class="result-val" id="res-total"></span></div>
+          <div class="result-row"><span>맞은 문제 수</span><span class="result-val" style="color:var(--success);" id="res-correct"></span></div>
+          <div class="result-row"><span>걸린 시간</span><span class="result-val" style="color:#111;" id="res-time"></span></div>
+        </div>
+        <div class="result-header">내가 푼 문제 분석</div>
+        <div id="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 106개 데이터 전체 (PDF 원본 정답 텍스트를 해설 e에 온전히 수록)
+    const mockData = [
+      {stars: 2, r: 3, q:"방파제 종류 3가지", a:[["직립제","직립"],["경사제","경사"],["혼성제","혼성"]], e:"- 직립제\n- 경사제\n- 혼성제"},
+      {stars: 1, r: 4, q:"sand mat의 역할 4가지", a:[["압밀촉진","상부","배수층"],["주행성"],["지하수위"],["연약화"]], e:"- 연약지반 압밀촉진을 위한 상부 배수층 형성\n- 시공기계의 주행성 확보\n- 지하배수층이 되어 지하수위를 저하\n- 지하수위 상승시 횡방향 배수로 성토지반의 연약화 방지"},
+      {stars: 1, t:'b', q:"일평균 15도 이상일때 습윤상태 보호기간\n- 보통포틀랜드 시멘트 : [ 1 ]일\n- 고로슬래그 시멘트 : [ 2 ]일\n- 조강포틀랜드 시멘트 : [ 3 ]일", a:[["5"],["7"],["3"]], e:"- 보통포틀랜드 시멘트 : 5일\n- 고로슬래그 시멘트 : 7일\n- 조강포틀랜드 시멘트 : 3일"},
+      {stars: 2, r: 4, q:"심발공(심빼기 발파공) 종류 4가지", a:[["컷"],["번컷"],["노컷"],["스윙컷"],["피라미드컷"]], e:"- 컷\n- 번컷\n- 노컷\n- 스윙컷\n- 피라미드컷"},
+      {stars: 1, t:'single', q:"직접 양질토를 연약지반 위에 투하해 그 자중으로 기초지반에 파괴를 일으켜 연약토를 주위로 배제시켜서 지반을 개량하는 공법은?", options:["프리로딩 공법", "모래다짐말뚝 공법", "동압밀 공법", "강제치환공법"], answer:3, a:[["강제치환"]], e:"★강제치환공법\n직접 양질토를 연약지반 위에 투하해 그 자중으로 기초지반에 파괴를 일으켜 연약토를 주위로 배제시켜서 지반을 개량하는 공법"},
+      {stars: 1, r: 4, q:"강제치환 공법 단점 4가지", a:[["잔류침하"],["확실성"],["설계","이론"],["균일"],["팽창"]], e:"- 잔류침하가 예상됨\n- 개량효과의 확실성이 없음\n- 이론적이며 정량적인 설계가 어려움\n- 균일하게 치환하기가 어려움\n- 압출에 의한 사면선단의 팽창이 일어남"},
+      {stars: 3, r: 4, q:"콘크리트포장 종류 4가지", a:[["무근"],["철근"],["연속철근"],["프리스트레스"]], e:"- 무근 콘크리트포장\n- 철근 콘크리트포장\n- 연속철근 콘크리트포장\n- 프리스트레스 콘크리트포장"},
+      {stars: 1, r: 3, q:"압출공법에 적용되는 압출방법 3가지", a:[["pulling","풀링"],["pushing","푸싱"],["lift","리프트"]], e:"- Pulling 방법\n- Pushing 방법\n- Lift&pushing 방법"},
+      {stars: 1, r: 4, q:"다짐도를 판정하는 방법 4가지", a:[["건조밀도"],["포화도","공극률"],["강도"],["다짐기계","횟수"],["변형"]], e:"- 건조밀도로 규정\n- 포화도와 공극률로 규정\n- 강도 특성으로 규정\n- 다짐기계, 다짐횟수로 규정\n- 변형 특성으로 규정"},
+      {stars: 3, r: 4, q:"도로 노상의 지지력을 평가할 수 있는 현장시험 평가방법 4가지", a:[["cbr"],["k값"],["cone값","콘값"],["n치"]], e:"- CBR\n- K값\n- Cone값\n- N치"},
+      {stars: 2, r: 4, q:"기초가 구비해야할 조건 (얕은 기초의 구비조건) 4가지", a:[["경제적"],["근입깊이"],["안전","지지"],["침하"],["시공"]], e:"- 경제적인 시공이 가능할 것\n- 최소의 근입깊이를 가질 것\n- 안전하게 하중을 지지할 수 있을 것\n- 허용 침하량을 넘지 않을 것\n- 기초공의 시공이 가능할 것"},
+      {stars: 3, r: 4, q:"마샬안정도시험으로 얻을 수 있는 설계기준 4가지", a:[["안정도"],["흐름값"],["밀도"],["공극률"],["포화도"]], e:"- 안정도\n- 흐름값\n- 공시체의 밀도\n- 공극률\n- 포화도"},
+      {stars: 3, r: 3, q:"PS 콘크리트 공법 중 동바리를 사용하지 않는 공법 3가지", a:[["fcm","캔틸레버"],["mss","이동식"],["ilm","압출"]], e:"- FCM(캔틸레버공법)\n- MSS(이동식 비계공법)\n- ILM(압출공법)"},
+      {stars: 2, t:'b', q:"배수시설\n- 표면배수: [ 1 ]\n- 지하배수: [ 2 ]\n- 횡단배수: [ 3 ]", a:[["측구","집수정"],["맹암거","유공관"],["암거","배수관"]], e:"- 표면배수: 측구, 집수정\n- 지하배수: 맹암거, 유공관\n- 횡단배수: 암거, 배수관"},
+      {stars: 1, r: 4, q:"암반의 사면 파괴형태 4가지", a:[["평면"],["쐐기"],["전도"],["원호"]], e:"- 평면파괴\n- 쐐기파괴\n- 전도파괴\n- 원호파괴"},
+      {stars: 3, r: 4, q:"중력식 댐 시공 후 내부에 설치되는 검사랑의 시공목적 4가지", a:[["균열"],["온도"],["수축량"],["그라우팅"],["간극수압"],["양압력"]], e:"- 콘크리트 내부의 균열검사\n- 콘크리트 온도 측정\n- 콘크리트 수축량 검사\n- 그라우팅공 이용\n- 간극수압 측정\n- 양압력 상태 검사"},
+      {stars: 1, r: 4, q:"조절발파공법의 목적 4가지", a:[["여굴"],["피해"],["낙석","균열"],["보강"],["평활"]], e:"- 여굴감소\n- 암반피해 최소화\n- 낙석 및 균열 방지\n- 보강의 필요성 감소\n- 굴착면을 평활하게 함"},
+      {stars: 5, r: 4, q:"조절발파공법 종류 4가지", a:[["라인드릴링"],["쿠션블라스팅"],["스무스블라스팅"],["프리스플리팅"]], e:"- 라인 드릴링\n- 쿠션 블라스팅\n- 스무스 블라스팅\n- 프리스플리팅"},
+      {stars: 1, r: 4, q:"사장교 배치방식 종류 4가지", a:[["부채"],["하프"],["스타"],["방사"]], e:"- 부채형\n- 하프형\n- 스타형\n- 방사형"},
+      {stars: 1, r: 3, q:"횡방향 지반반력계수를 구하는 현장시험 3가지", a:[["프레셔미터","pmt"],["딜라토미터","dmt"],["수평재하","llt"]], e:"- 프레셔미터시험(PMT)\n- 딜라토미터시험(DMT)\n- 수평재하시험(LLT)"},
+      {stars: 1, r: 4, q:"슬라임 제거 방법 4가지", a:[["샌드펌프"],["에어리프트"],["석션"],["수중펌프"]], e:"- 샌드펌프 방법\n- 에어리프트 방법\n- 석션펌프 방법\n- 수중펌프 방법"},
+      {stars: 1, t:'single', q:"굴착 소요깊이까지 케이싱 관입 후 내부굴착 후, 케이싱을 인발하며 철근망 투입과 콘크리트를 타설하는 공법은?", options:["RCD 공법", "레이몬드 말뚝공법", "베노토 공법", "어스드릴 공법"], answer:2, a:[["베노토"]], e:"★베노토 공법\n굴착 소요깊이까지 케이싱 관입 후 및 내부굴착후, 케이싱 인발, 철근망 투입, 콘크리트 타설, 완성"},
+      {stars: 1, t:'single', q:"표층 케이싱을 설치하고 굴착공 내에 압력수를 순환시키며 드릴 파이프 내의 굴착토사를 배출하는 공법은?", options:["RCD 공법", "베노토 공법", "레이몬드 말뚝공법", "어스드릴 공법"], answer:0, a:[["rcd"],["역순환"]], e:"★RCD(역순환) 공법\n표층 케이싱 설치, 굴착공 내에 압력수를 순환시킴, 드릴 파이프 내의 굴착토사 배출"},
+      {stars: 1, t:'single', q:"얇은 철판의 내외관을 동시 관입한 후 내관을 인발하고 외관 내부에 콘크리트를 타설하는 공법은?", options:["베노토 공법", "RCD 공법", "레이몬드 말뚝공법", "프리보링 공법"], answer:2, a:[["레이몬드"]], e:"★레이몬드 말뚝공법\n얇은 철판의 내외관 동시 관입, 내관 인발, 외관 내부에 콘크리트 타설"},
+      {stars: 1, r: 3, q:"공사관리의 3대 요소", a:[["품질"],["공정"],["원가"]], e:"- 품질관리\n- 공정관리\n- 원가관리"},
+      {stars: 2, r: 3, q:"댐의 유수전환방식 3가지", a:[["체절"],["터널"],["개거"]], e:"- 반하천 체절공\n- 가배수 터널공\n- 가배수로 개거공"},
+      {stars: 3, r: 4, q:"토적곡선(유토곡선) 작성 목적 4가지", a:[["배분"],["운반거리"],["기계"],["시공방법"],["토취장","토사장"]], e:"- 토량 배분\n- 토량의 평균 운반거리 산출\n- 토공기계 결정\n- 시공방법 결정\n- 토취장 및 토사장 선정"},
+      {stars: 2, t:'single', q:"유수의 흐름방향과 유속을 제어하여 하안, 제방의 침식현상을 방지하기 위해 전면부에 설치하는 구조물은?", options:["호안", "수제", "도류제", "방파제"], answer:1, a:[["수제"]], e:"★수제\n유수의 흐름방향과 유속을 제어하여 하안, 제방의 침식현상을 방지하기 위해 호안이나 하안 전면부에 설치하는 구조물"},
+      {stars: 1, r: 4, q:"연약지반 개량공법 중 일시적인 지반개량공법 4가지", a:[["wellpoint","웰포인트"],["deepwell","딥웰"],["동결"],["침투압"],["전기침투"]], e:"- Well point공법\n- Deep well 공법\n- 동결공법\n- 침투압공법\n- 전기침투공법"},
+      {stars: 3, r: 4, q:"토취장 선정조건 4가지", a:[["토질"],["토량"],["지형"],["운반도로"],["배수"],["기계"]], e:"- 토질이 양호할 것\n- 토량이 충분할 것\n- 싣기가 편리한 지형일 것\n- 운반도로가 양호하며 장애물에 적고 유지가 용이\n- 용수, 붕괴 우려 없고 배수가 양호한 지형\n- 기계의 사용이 용이할 것"},
+      {stars: 1, r: 3, q:"NATM공법 이용 시 터널의 막장 안정을 위한 공법 3가지", a:[["숏크리트"],["록볼트"],["약액주입"]], e:"- 막장면 숏크리트공법\n- 막장면 록볼트공법\n- 약액주입공법"},
+      {stars: 1, r: 4, q:"NATM공법 이용 시 지하수 처리를 위한 대책공법 4가지", a:[["물빼기"],["wellpoint","웰포인트"],["약액주입"],["압기"]], e:"- 물빼기공\n- Well point 공법\n- 약액주입공법\n- 압기공법"},
+      {stars: 1, r: 4, q:"록볼트를 정착방법에 따라 분류할 때 종류 4가지", a:[["선단"],["전면"],["혼합"],["마찰"]], e:"- 선단정착형\n- 전면접착형\n- 혼합형\n- 마찰형"},
+      {stars: 3, r: 4, q:"해안, 준설, 매립 공사시 사용되는 준설선의 종류 4가지", a:[["펌프"],["디퍼"],["그래브"],["버킷"]], e:"- 펌프준설선\n- 디퍼준설선\n- 그래브준설선\n- 버킷준설선"},
+      {stars: 3, t:'b', q:"준설선의 특징\n- [ 1 ]준설선: 준설/매립 동시 신속 시공 + 회전 cutter로 깎아 펌프로 흡입 배송\n- [ 2 ]준설선: 쇄암추/쇄암기 끝 강철 날끝으로 암석 파쇄\n- [ 3 ]준설선: 파워셔블을 대선에 설치해 수중 작업\n- [ 4 ]준설선: 선체 토창 설치해 적재 후 사토장 버림", a:[["펌프"],["쇄암"],["디퍼"],["호퍼"]], e:"- 펌프준설선: 준설과 매립을 동시에 신속히 시공 가능 + 해저 토사를 회전형 cutter로 깎아 펌프로 흡입해 매립지로 배송\n- 쇄암준설선: 해저의 암반이나 암초를 쇄암추나 쇄암기 끝에 특수한 강철로 된 날끝을 달아 암석을 파쇄\n- 디퍼준설선: 파워셔블을 대선에 설치해 사암이나 혈암 등의 수중에 적합한 준설선\n- 호퍼준설선: 자항식 펌프 준설선에서 선체의 일부에 토창을 설치해 토운선을 안사용하고 제거한 토사를 적재했다 사토장까지 토사를 버리는 준설선"},
+      {stars: 1, r: 4, q:"필댐의 필터재 역할 4가지", a:[["유출"],["완충"],["자기치유"],["파이핑"]], e:"- 물만 통과시키고 토립자의 유출방지\n- 역학적 완충역할\n- 코어재의 자기치유작용을 지원\n- 파이핑 방지"},
+      {stars: 1, t:'single', q:"연약한 점토질지반을 굴착할 때 흙막이벽 전후의 흙 중량 차이 때문에 굴착저면이 부풀어 오르는 현상은?", options:["보일링", "파이핑", "히빙", "액상화"], answer:2, a:[["히빙"]], e:"★히빙\n연약한 점토질지반을 굴착할 때 흙막이벽 전후의 흙의 중량 차이 때문에 굴착저면이 부풀어 오르는 현상"},
+      {stars: 3, r: 4, q:"히빙의 발생 우려가 있는 지반의 방지대책 4가지", a:[["근입깊이"],["상재하중","표토"],["지하수위"],["아일랜드"],["지반개량"]], e:"- 흙막이벽의 근입깊이을 증대\n- 표토를 제거해 상재하중을 작게 함\n- 배수공법으로 지하수위를 저하\n- 굴착방식을 아일랜드 컷 방식으로 개선\n- 굴착저면의 지반개량 실시"},
+      {stars: 3, r: 4, q:"그라우팅 종류 4가지", a:[["압밀","콘솔리데이션"],["커튼"],["림"],["콘택트"],["블랭킷"]], e:"- 압밀(콘솔리데이션) 그라우팅\n- 커튼 그라우팅\n- 림 그라우팅\n- 콘택트 그라우팅\n- 블랭킷 그라우팅"},
+      {stars: 1, r: 3, q:"구조물의 기초바닥에 작용하는 양압력에 저항하는 법 3가지", a:[["사하중"],["부력앵커"],["영구배수"]], e:"- 사하중에 의한 방법\n- 부력 앵커시스템 방법\n- 영구배수처리방법"},
+      {stars: 1, r: 4, q:"케이슨 기초의 침하공법 4가지", a:[["재하중"],["분기"],["물하중"],["발파"],["감압"],["진동"]], e:"- 재하중에 의한 공법\n- 분기식 공법\n- 물하중식 공법\n- 발파식 공법\n- 감압식 공법\n- 진동식 공법"},
+      {stars: 3, r: 5, q:"토목시공에 쓰이는 토목섬유의 주요기능 5가지", a:[["배수"],["여과"],["분리"],["보강"],["차수"]], e:"- 배수 기능\n- 여과 기능\n- 분리 기능\n- 보강 기능\n- 차수 기능"},
+      {stars: 1, t:'single', q:"교량의 상하부구조 접점에 위치해 상부구조 하중을 전달하고 상대변위 및 회전변형을 흡수하는 구조는?", options:["전단연결재", "신축이음장치", "교좌장치", "탄성받침"], answer:2, a:[["교좌장치"]], e:"★교좌장치\n교량의 상부구조와 하부구조의 접점에 위치해 상부구조에서 전달되는 하중을 하부구조에 전달하고 상하부 간의 상대변위 및 상부구조의 회전변형을 흡수하는 구조"},
+      {stars: 1, r: 4, q:"터널보조공법의 종류 4가지", a:[["숏크리트","록볼트"],["주입"],["훠폴링"],["파이프루프"],["강관다단"],["지하수위"],["동결"]], e:"- 숏크리트 및 록볼트\n- 주입공법\n- 훠폴링 공법\n- 파이프 루프 공법\n- 강관 다단 그라우팅공법\n- 지하수위 저하공법\n- 동결공법"},
+      {stars: 3, r: 4, q:"흙의 동결을 방지하기 위한 동상대책 4가지", a:[["치환"],["조립토"],["배수구"],["단열재"],["화학약액"]], e:"- 치환공법으로 동결되지 않는 흙으로 바꾸기\n- 지하수위 상층에 조립토층을 설치\n- 배수구 설치로 지하수위를 저하\n- 흙 속에 단열재료를 매입\n- 화학약액으로 처리"},
+      {stars: 1, r: 4, q:"기존 아스팔트 포장에 생긴 균열 보수방법 4가지", a:[["오버레이"],["절삭"],["표면처리"],["패싱","패칭"]], e:"- 오버레이\n- 절삭 오버레이\n- 표면처리\n- 패싱"},
+      {stars: 2, r: 4, q:"기층을 만들기 위해 사용되는 안정처리 공법 4가지", a:[["입도조정"],["시멘트"],["아스팔트"],["석회"]], e:"- 입도조정공법\n- 시멘트 안정처리공법\n- 아스팔트 안정처리공법\n- 석회 안정처리공법"},
+      {stars: 2, r: 3, q:"교량의 내진설계시 사용하는 내진해석방법 3가지", a:[["등가정적"],["응답스펙트럼"],["시간이력"]], e:"- 등가정적 해석법\n- 응답 스펙트럼 해석법\n- 시간이력 해석법"},
+      {stars: 1, r: 4, q:"연약지반 교대에 발생하기 쉬운 측방유동 요인 4가지", a:[["편재하중"],["성토높이"],["두께"],["전단강도"]], e:"- 교대배면의 뒤채움 편재하중\n- 교대배면의 성토높이\n- 교대하부 연약층의 두께\n- 교대하부 연약층의 전단강도"},
+      {stars: 1, r: 4, q:"아스팔트 콘크리트 포장의 장점 4가지", a:[["주행"],["평탄"],["시공"],["양생"],["유지보수"]], e:"- 주행성이 좋다\n- 평탄성이 좋다\n- 시공성이 좋다\n- 양생기간이 짧다\n- 유지 보수 작업이 용이하다"},
+      {stars: 2, r: 4, q:"록볼트의 역할 4가지", a:[["봉합"],["보형성"],["내압"],["아치"],["지반보강"]], e:"- 봉합작용\n- 보형성작용\n- 내압작용\n- 아치형성작용\n- 지반보강작용"},
+      {stars: 2, r: 4, q:"교량을 상판의 위치에 따라 분류할 때 종류 4가지", a:[["상로"],["중로"],["하로"],["2층"]], e:"- 상로교\n- 중로교\n- 하로교\n- 2층교"},
+      {stars: 1, r: 3, q:"점진적인 파괴형태 3가지", a:[["국부"],["전반"],["관입"]], e:"- 국부전단파괴\n- 전반전단파괴\n- 관입전단파괴"},
+      {stars: 1, r: 4, q:"항만구조물 설계시 기초지반의 액상화 평가시 실시되는 현장시험 4가지", a:[["표준관입"],["콘관입"],["탄성파"],["지하수위"]], e:"- 표준관입시험\n- 콘관입시험\n- 탄성파탐사\n- 지하수위 조사"},
+      {stars: 3, r: 4, q:"매스콘크리트에서 온도 균열 억제하는 방법 4가지", a:[["온도철근"],["저열시멘트"],["냉각수"],["선행냉각"],["분할타설"],["액체질소"]], e:"- 온도철근의 배근\n- 저열 시멘트를 선정\n- 콘크리트 내부에 냉각수 파이프를 설치\n- 콘크리트의 선행 냉각에 의한 온도저하\n- 콘크리트의 분할 타설\n- 액체질소를 사용"},
+      {stars: 2, r: 4, q:"여수로의 종류 4가지", a:[["슈트"],["측수로"],["그롤리홀"],["사이펀"],["월류"]], e:"- 슈트식 여수로\n- 측수로 여수로\n- 그롤리 홀 여수로\n- 사이펀 여수로\n- 댐마루 월류식 여수로"},
+      {stars: 1, r: 3, q:"유기질토 특징 3가지", a:[["압축성"],["함수비"],["2차압밀"]], e:"- 압축성이 크다\n- 자연함수비는 200~300%다\n- 2차 압밀에 의한 압밀침하량이 크다"},
+      {stars: 2, r: 4, q:"촉진양생법 종류 4가지", a:[["증기"],["고압증기"],["전기"],["온수"],["적외선"],["고주파"]], e:"- 증기양생\n- 고압증기 양생\n- 전기양생\n- 온수양생\n- 적외선 양생\n- 고주파 양생"},
+      {stars: 5, r: 3, q:"말뚝의 지지력을 산정하는 방법 3가지", a:[["동역학"],["정역학"],["정재하"]], e:"- 동역학적 공식에 의한 방법\n- 정역학적 공식에 의한 방법\n- 정재하시험에 의한 방법"},
+      {stars: 1, r: 3, q:"록필댐의 종류 3가지", a:[["표면"],["내부"],["중앙"]], e:"- 표면 차수벽형댐\n- 내부 차수벽형댐\n- 중앙 차수벽형댐"},
+      {stars: 2, r: 3, q:"흙의 애터버그한계의 종류 3가지", a:[["액성"],["소성"],["수축"]], e:"- 액성한계\n- 소성한계\n- 수축한계"},
+      {stars: 1, r: 5, q:"RMR에 의한 암반분류 시 적용되는 평가요소 5가지", a:[["일축압축"],["rqd"],["간격"],["절리"],["지하수"],["방향"]], e:"- 암석의 일축압축강도\n- RQD\n- 불연속면 간격\n- 절리의 상태\n- 지하수 상태\n- 불연속면 방향"},
+      {stars: 3, r: 4, q:"말뚝 기초에 발생하는 부마찰력의 발생원인 4가지", a:[["압밀"],["상재하중"],["지하수위"],["점착력","압축성"]], e:"- 말뚝의 타입지반이 압밀 진행 중인 경우\n- 상재하중이 말뚝과 지표에 작용하는 경우\n- 지하수위의 저하로 체적이 감소하는 경우\n- 점착력 있는 압축성 지반일 때"},
+      {stars: 1, r: 4, q:"점성토지반에서 표준관입시험 결과 N치로 판단/추정 가능한 사항 4가지", a:[["컨시스턴시"],["일축압축강도"],["점착력"],["허용지지력"]], e:"- 컨시스턴시\n- 일축압축강도\n- 점착력\n- 기초지반 허용지지력"},
+      {stars: 1, r: 4, q:"강제배수공법 종류 4가지", a:[["웰포인트"],["전기침투"],["진공압밀"],["침투압"]], e:"- 웰포인트 공법\n- 전기침투 공법\n- 진공압밀 공법\n- 침투압 공법"},
+      {stars: 1, r: 4, q:"가체절공의 종류 4가지", a:[["간이"],["한겹"],["두겹"],["셀"]], e:"- 간이식 가제철공\n- 한겹식 가제철공\n- 두겹식 가제철공\n- 셀식 가제철공"},
+      {stars: 2, r: 3, q:"터널굴착시 여굴이 발생하는 원인 3가지", a:[["천공","발파"],["착암기"],["전단력"]], e:"- 천공 및 발파의 부적절\n- 착암기 사용 부적절\n- 전단력이 약한 토질 굴착시 발생"},
+      {stars: 1, r: 4, q:"터널굴착 시 여굴량 감소시키는 방안 4가지", a:[["천공"],["지발뇌관"],["조절폭파"],["초기보강"]], e:"- 천공의 위치, 각도를 정확하게 해 준다\n- 지발뇌관 사용\n- 조절폭파공법 적용\n- 발파 후에 조속한 초기보강을 실시"},
+      {stars: 5, r: 4, q:"실코트가 중요한 목적 4가지", a:[["노화"],["방수성"],["미끄럼"],["내구성"],["수밀성"]], e:"- 표층의 노화방지\n- 포장 표면의 방수성 증대\n- 포장 표면의 미끄럼 방지\n- 포장 표면의 내구성 증대\n- 포장면의 수밀성 증대"},
+      {stars: 1, r: 3, q:"치환공법의 종류 3가지", a:[["굴착"],["폭파"],["강제"]], e:"- 굴착치환공법\n- 폭파치환공법\n- 강제치환공법"},
+      {stars: 1, r: 4, q:"콘크리트 타설시 발생하는 초기균열의 종류 4가지", a:[["침하"],["초기건조"],["거푸집"],["진동","재하"]], e:"- 침하균열\n- 초기건조균열\n- 거푸집 변형에 의한 균열\n- 진동 및 경미한 재하에 의한 균열"},
+      {stars: 1, t:'single', q:"로드에 붙인 저항체를 지중에 넣어 타격, 관입, 회전할 때의 흙의 전단강도를 측정하는 원위치 시험은?", options:["프레셔미터", "평판재하시험", "사운딩", "오거보링"], answer:2, a:[["사운딩"]], e:"★사운딩\n로드에 붙인 어떤 저항체를 지중에 넣어 타격 관입, 인발 및 회전할 때의 흙의 전단강도를 측정하는 원위치 시험"},
+      {stars: 2, r: 4, q:"정적사운딩 종류 4가지", a:[["베인"],["이스키"],["스웨덴식"],["휴대용원추"],["화란식원추"]], e:"- 베인 시험기\n- 이스키 메터\n- 스웨덴식 관입 시험기\n- 휴대용 원추 관입 시험기\n- 화란식 원추 관입 시험기"},
+      {stars: 2, r: 2, q:"강상자형교를 box 단면의 구성형태로 구분 2가지", a:[["단실"],["다실"],["다중"]], e:"- 단실박스\n- 다실박스\n- 다중박스"},
+      {stars: 1, t:'b', q:"허공 이어치기 시간 간격 표준\n- 외기온도가 25도 초과: [ 1 ]시간\n- 외기온도가 25도 이하: [ 2 ]시간", a:[["2"],["2.5"]], e:"★허공 이어치기 시간 간격 표준\n- 외기온도가 25도 초과: 2시간\n- 외기온도가 25도 이하: 2.5시간"},
+      {stars: 1, r: 4, q:"도로교 신축이음장치의 종류 4가지", a:[["monocell","모노셀"],["nb"],["강핑거"],["레일"]], e:"- Monocell 조인트\n- NB 조인트\n- 강핑거 조인트\n- 레일 조인트"},
+      {stars: 1, r: 4, q:"암거의 배열방식 4가지", a:[["자연"],["빗"],["차단"],["집단"],["어골"]], e:"- 자연식\n- 빗식\n- 차단식\n- 집단식\n- 어골식"},
+      {stars: 2, r: 4, q:"가물막이 공사에서 Sheet pile식 공법의 종류 4가지", a:[["간이"],["ringbeam","링빔"],["한겹"],["두겹"],["cell","셀"]], e:"- 간이식\n- Ring Beam식\n- 한겹 sheet pile식\n- 두겹 sheet pile식\n- Cell식"},
+      {stars: 1, r: 4, q:"수동말뚝 해석하는 방법 4가지", a:[["간편"],["탄성"],["지반반력"],["유한요소"]], e:"- 간편법\n- 탄성법\n- 지반반력법\n- 유한요소법"},
+      {stars: 1, t:'b', q:"성토후 다짐 목적 3가지\n- 흙의 강도를 증가시켜 [ 1 ] 향상\n- 간극비를 감소시켜 [ 2 ]를 감소\n- 압축성을 감소시켜 [ 3 ]를 방지", a:[["지지력"],["투수계수"],["침하"]], e:"★성토후 다짐을 하는 목적\n- 흙의 강도를 증가시켜 지지력 향상\n- 간극비를 감소시켜 투수계수를 감소\n- 압축성을 감소시켜 침하를 방지"},
+      {stars: 1, t:'single', q:"교란되지 않은 공시체의 일축 압축 강도와 다시 반죽한 공시체의 일축 압축 강도의 비는?", options:["포아송비", "예민비", "간극비", "건조밀도"], answer:1, a:[["예민비"]], e:"★예민비\n교란되지 않은 공시체의 일축 압축 강도와 다시 반죽한 공시체의 일축 압축 강도의 비"},
+      {stars: 1, t:'single', q:"콘크리트 타설 시 허용 이어치기 시간 간격을 두는 이유는 무엇을 예방하기 위함인가?", options:["블로우업", "콜드 조인트", "스폴링", "레이턴스"], answer:1, a:[["콜드조인트"]], e:"★허공 이어치기 시간 간격을 두는 이유\n- 콜드 조인트 예방을 위해"},
+      {stars: 1, r: 3, q:"록볼트의 인발시험 목적 3가지", a:[["정착력"],["파단강도"],["부착강도"]], e:"- 지반과 록볼트의 정착력을 알기 위해서\n- 볼트의 파단강도를 알기 위해서\n- 볼트와 충전재의 부착강도를 알기 위해서"},
+      {stars: 1, r: 4, q:"샌드 드레인을 연약지반에 타설하는 방법 4가지", a:[["압축공기"],["waterjet","워터젯"],["rotary","로터리"],["earthauger","어스오거"]], e:"- 압축공기식 케이싱 방법\n- Water jet식 케이싱 방법\n- Rotary boring에 의한 방법\n- Earth auger에 의한 방법"},
+      {stars: 1, r: 4, q:"지진보호장치 4가지", a:[["지진격리"],["감쇠기"],["낙교방지"],["탄성받침"]], e:"- 지진격리 받침\n- 감쇠기\n- 낙교방지 장치\n- 내진보강 탄성 받침장치"},
+      {stars: 2, r: 4, q:"오픈케이슨 공법의 단점 4가지", a:[["히빙","보일링"],["침하지연"],["기울어짐"],["토질"],["양생"]], e:"- 히빙 또는 보일링현상 우려\n- 장애물로 인한 침하지연\n- 케이슨 기울어짐 염려\n- 토질상태 파악 어려움\n- 저면 콘크리트 양생에 문제"},
+      {stars: 1, r: 3, q:"대표적 특수 거푸집 공법 3가지", a:[["슬라이딩폼"],["슬립폼"],["트레블링폼"]], e:"- 슬라이딩폼 공법\n- 슬립폼 공법\n- 트레블링폼 공법"},
+      {stars: 2, r: 3, q:"보강토 옹벽의 구성 3가지", a:[["전면판"],["보강재"],["뒤채움"]], e:"- 전면판\n- 보강재\n- 뒤채움 흙"},
+      {stars: 1, r: 4, q:"콘크리트 균열에 대한 보수기법 4가지", a:[["에폭시"],["봉합"],["짜집기"],["보강철근"],["그라우팅"],["드라이패킹"]], e:"- 에폭시 주입법\n- 봉합법\n- 짜집기법\n- 보강철근 이용방법\n- 그라우팅\n- 드라이패킹"},
+      {stars: 1, r: 4, q:"측방유동을 최소화시킬 수 있는 방안 4가지", a:[["편재하중"],["배면토압"],["압밀촉진"],["화학반응"],["치환"]], e:"- 뒤채움재 편재하중 경감\n- 배면토압 경감\n- 압밀촉진에 의한 지반강도 증대\n- 화학반응에 의한 지반강도 증대\n- 치환에 의한 지반개량"},
+      {stars: 1, r: 4, q:"보일링 현상 방지 대책 4가지", a:[["지하수위"],["근입깊이"],["차수성"],["고결"]], e:"- 지하수위를 저하시킨다\n- 흙막이의 근입깊이를 깊게 한다\n- 차수성 높은 흙막이를 설치한다\n- 굴착 저면을 고결시킨다"},
+      {stars: 1, r: 3, q:"옹벽의 안정성 검토항목 3가지", a:[["지지력"],["전도"],["활동"]], e:"- 지반지지력에 대한 안정\n- 전도에 대한 안정\n- 활동에 대한 안정"},
+      {stars: 1, r: 4, q:"아스팔트 품질시험 종류 4가지", a:[["침입도"],["신도"],["점도"],["밀도"],["연화점"],["마샬"]], e:"- 침입도 시험\n- 신도시험\n- 점도시험\n- 밀도시험\n- 연화점 시험\n- 마샬안정도시험"},
+      {stars: 1, r: 4, q:"점성토 지반의 개량공법 4가지", a:[["샌드드레인"],["페이퍼드레인"],["프리로딩"],["침투압"],["생석회말뚝"]], e:"- 샌드드레인 공법\n- 페이퍼드레인 공법\n- 프리로딩 공법\n- 침투압 공법\n- 생석회말뚝 공법"},
+      {stars: 2, t:'single', q:"소구경의 강관을 입갱 사이에 삽입하거나 또는 당김으로써 토층에 관을 매설하는 공법은?", options:["TBM 공법", "프론트잭킹 공법", "쉴드 공법", "오픈케이슨"], answer:1, a:[["프론트잭킹"]], e:"★프론트잭킹공법\n소구경의 강관을 입갱 사이에 삽입하거나 또는 당김으로써 토층에 관을 매설"},
+      {stars: 1, r: 4, q:"굳지 않는 콘크리트의 워커빌리티 측정방법 4가지", a:[["슬럼프"],["흐름"],["구관입"],["리몰딩"],["비비"],["다짐계수"]], e:"- 슬럼프 시험\n- 흐름시험\n- 구관입 시험\n- 리몰딩 시험\n- 비비시험\n- 다짐계수 시험"},
+      {stars: 1, t:'single', q:"슬럼프가 낮은 빈배합 콘크리트를 불도저로 포설하고 진동롤러로 다져 축조하는 댐 형식은?", options:["록필댐", "표면차수벽형댐", "롤러다짐 콘크리트댐", "중력식댐"], answer:2, a:[["롤러다짐"]], e:"★롤러다짐 콘크리트댐\n슬럼프가 낮은 빈배합 콘크리트를 덤프트럭으로 운반, 불도저로 포설하고 진동롤러로 다져 콘크리트댐을 축조하는 형식"},
+      {stars: 1, r: 4, q:"측구의 형식 4가지", a:[["l형"],["u형"],["v형"],["산마루"]], e:"- L형\n- U형\n- V형\n- 산마루형"},
+      {stars: 1, r: 3, q:"동상이 발생하기 쉬운 조건 3가지", a:[["흙"],["0도"],["물"]], e:"- 동상이 발생하기 쉬운 흙 존재\n- 0도 이하의 온도가 오래 지속\n- 물의 공급이 충분"},
+      {stars: 1, r: 4, q:"성토재료에 요구되는 흙의 성질 4가지", a:[["투수성"],["전단강도"],["트래피커빌리티"],["압축성"],["지지력"]], e:"- 투수성이 낮은 흙\n- 다져진 흙의 전단강도가 클 것\n- 시공장비의 트래피커빌리티가 확보될 수 있을 것\n- 노면에 나쁜 영향을 미치지 않도록 압축성이 작을 것\n- 완성 후의 교통하중에 대해 지지력을 가지고 있을 것"},
+      {stars: 2, r: 4, q:"교량의 교대에 많이 사용되는 구조형식 4가지", a:[["중력식"],["반중력식"],["역t형식"],["뒷부벽식"],["라멘식"]], e:"- 중력식\n- 반중력식\n- 역T형식\n- 뒷부벽식\n- 라멘식"},
+      {stars: 2, r: 4, q:"N치로 추정되는 사항 4가지", a:[["내부마찰각"],["상대밀도"],["지지력계수"],["탄성계수"]], e:"- 내부마찰각\n- 상대밀도\n- 지지력계수\n- 탄성계수"},
+      {stars: 1, t:'b', q:"침하조건식 및 침하촉진방법\n- 침하조건식: [ 1 ]\n- 침하촉진방법: 재하중에 의한 공법, 분사식, 물하중식, 발파에 의한 공법, 감압에 의한 공법", a:[["w>f+q+b"]], e:"- 침하조건식: W>F+Q+B\n- 침하촉진방법: 재하중에 의한 공법, 분사식 침하공법, 물하중식 침하공법, 발파에 의한 침하공법, 감압에 의한 침하공법"},
+      {stars: 1, t:'single', q:"콘크리트를 타설 전 파이프를 배관하고 파이프 내부에 냉각수를 순환시켜 콘크리트의 온도를 낮추는 방법은?", options:["선행 냉각", "액체질소 냉각", "관로식 냉각", "증기 냉각"], answer:2, a:[["관로식"]], e:"★관로식 냉각\n콘크리트를 타설 전 파이프를 배관하고 파이프 내부에 냉각수를 순환시켜 콘크리트의 온도를 낮추는 방법"},
+      {stars: 1, t:'single', q:"콘크리트를 타설하기 전 재료의 일부 또는 전부를 냉각시켜 콘크리트의 온도를 낮추는 방법은?", options:["관로식 냉각", "선행 냉각", "진공 냉각", "적외선 냉각"], answer:1, a:[["선행"]], e:"★선행 냉각\n콘크리트를 타설하기 전 재료의 일부 또는 전부를 냉각시켜 콘크리트의 온도를 낮추는 방법"},
+      {stars: 1, r: 3, q:"앵커의 주요 구성요소 3가지", a:[["앵커두부"],["인장부"],["앵커체"]], e:"- 앵커두부\n- 인장부\n- 앵커체"}
+    ];
+
+    let targetQty = 20;
+    let quizSet = [];
+    let currentIdx = 0;
+    let userAnswers = [];
+    let timerInterval;
+    let startTime;
+    let totalSeconds = 0;
+    let isConfirmed = false;
+    let inputResults = []; 
+    let currentPicks = [];
+    
+    // 유형 관리
+    let currentType = 'all'; 
+    let rangeStartVal = 1;
+    let rangeEndVal = 106;
+
+    function adjustQty(amount) {
+      if (currentType === 'range') return;
+      targetQty = Math.max(10, Math.min(106, targetQty + amount));
+      document.getElementById('qty-disp').innerText = targetQty + '문제';
+    }
+
+    function openType(type) {
+      if (type === 'range') {
+        document.getElementById('range-modal').style.display = 'flex';
+      } else {
+        currentType = type;
+        updateTypeButtons();
+      }
+    }
+
+    function cancelRange() {
+      document.getElementById('range-modal').style.display = 'none';
+    }
+
+    function applyRange() {
+      const s = parseInt(document.getElementById('range-start').value);
+      const e = parseInt(document.getElementById('range-end').value);
+      if (isNaN(s) || isNaN(e) || s < 1 || e > 106 || s > e) {
+        alert("1부터 106 사이의 올바른 범위를 입력해주세요.");
+        return;
+      }
+      rangeStartVal = s;
+      rangeEndVal = e;
+      currentType = 'range';
+      updateTypeButtons();
+      document.getElementById('range-modal').style.display = 'none';
+    }
+
+    function updateTypeButtons() {
+      document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('btn-type-' + currentType).classList.add('active');
+      
+      const qtyLabel = document.getElementById('qty-label-text');
+      const qtyCtrl = document.querySelector('.qty-ctrl');
+      
+      if (currentType === 'range') {
+        qtyLabel.innerText = `기출문제 범위 (${rangeStartVal}번 ~ ${rangeEndVal}번)`;
+        qtyCtrl.style.display = 'none';
+      } else {
+        qtyLabel.innerText = '기출문제 출제 수 조절';
+        qtyCtrl.style.display = 'flex';
+      }
+    }
+
+    function startStudy() {
+      let pool = [];
+      if (currentType === 'all') {
+        pool = mockData.map(item => ({ ...item, forceSubj: false }));
+      } else if (currentType === 'obj') {
+        pool = mockData.filter(q => q.t === 'single').map(item => ({ ...item, forceSubj: false }));
+      } else if (currentType === 'subj') {
+        // 주관식 선택 시 객관식 문제까지 주관식 형태로 변환하여 106문제 전체 포함
+        pool = mockData.map(item => ({ ...item, forceSubj: item.t === 'single' }));
+      } else if (currentType === 'range') {
+        pool = mockData.slice(rangeStartVal - 1, rangeEndVal).map(item => ({ ...item, forceSubj: false }));
+      }
+
+      if (pool.length === 0) {
+        alert("선택하신 조건에 해당하는 문제가 없습니다.");
+        return;
+      }
+
+      quizSet = [];
+      let availableQuestions = [...pool];
+      let actualQty = (currentType === 'range') ? pool.length : Math.min(targetQty, pool.length);
+
+      for (let i = 0; i < actualQty; i++) {
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        const selectedQuestion = availableQuestions.splice(randomIndex, 1)[0];
+        const originalIndex = mockData.findIndex(m => m.q === selectedQuestion.q) + 1; 
+        quizSet.push({ ...selectedQuestion, originalIdx: originalIndex, displayNum: i + 1 });
+      }
+
+      currentIdx = 0;
+      userAnswers = [];
+      totalSeconds = 0;
+      document.getElementById('screen-main').classList.remove('active');
+      document.getElementById('screen-study').classList.add('active');
+      
+      startTimer();
+      renderQuiz();
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        totalSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const s = String(totalSeconds % 60).padStart(2, '0');
+        document.getElementById('timer-text').innerText = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function renderQuiz() {
+      isConfirmed = false;
+      inputResults = [];
+      currentPicks = [];
+      currentSingleAns = null;
+      
+      const q = quizSet[currentIdx];
+      document.getElementById('progress-text').innerText = `${currentIdx + 1} / ${quizSet.length}`;
+      document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / quizSet.length) * 100}%`;
+
+      const nextBtn = document.getElementById('btn-submit');
+      nextBtn.innerText = "제출";
+
+      let html = `<div class="question-wrapper">`;
+      
+      if(q.stars && q.stars > 0) {
+        html += `<div class="star-badge">${q.stars}회 출제</div>`;
+      }
+      
+      html += ` <div class="question-num">${q.displayNum}. <span>(No. ${q.originalIdx})</span></div>
+                <div class="question-text">${q.q}</div>
+              </div>`;
+      
+      // 객관식이지만 주관식 강제 모드인 경우 주관식 렌더링
+      const isSingleMode = (q.t === 'single' && !q.forceSubj);
+
+      if (isSingleMode) {
+        html += `<div class="question-guide">1개의 정답을 고르세요.</div><div class="options-list">`;
+        q.options.forEach((opt, idx) => {
+          html += `<div class="option" onclick="toggleSingle(${idx})" id="opt-${idx}">
+                     <div class="option-num">${idx + 1}</div><div>${opt}</div>
+                   </div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div class="question-guide">${q.t === 'b' ? '빈칸 번호에 맞춰 순서대로 답안을 입력하세요.' : '핵심 키워드를 포함하여 답안을 입력하세요.'}</div>
+                 <div class="multi-input-container">`;
+        const reqCount = q.t === 'b' ? q.a.length : (q.r || (q.a ? q.a.length : 1));
+        for(let i=0; i<reqCount; i++) {
+          let label = q.t === 'b' ? `[ ${i+1} ]` : `답안 ${i+1}`;
+          html += `<div class="input-row">
+                     <div class="input-label">${label}</div>
+                     <input type="text" class="subj-input ans-input">
+                   </div>`;
+        }
+        html += `</div><button class="btn-idk" onclick="handleIdk()">모름 (정답 바로보기)</button>`;
+      }
+
+      html += `<div class="explanation-box" id="exp-box">
+                 <div class="exp-title">모범 답안 및 원본 내용</div>
+                 <div class="exp-real-answer" id="exp-real-answer"></div>
+               </div>`;
+
+      document.getElementById('quiz-content').innerHTML = html;
+    }
+
+    function toggleSingle(idx) {
+      if (isConfirmed) return;
+      currentSingleAns = idx;
+      document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+      document.getElementById(`opt-${idx}`).classList.add('selected');
+    }
+
+    function handleIdk() {
+      if (isConfirmed) return;
+      document.querySelectorAll('.ans-input').forEach(el => {
+        if(el.value.trim() === '') el.value = '모름';
+      });
+      handleNext(); 
+    }
+
+    function handleNext() {
+      const q = quizSet[currentIdx];
+      const nextBtn = document.getElementById('btn-submit');
+      const isSingleMode = (q.t === 'single' && !q.forceSubj);
+
+      if (!isConfirmed) {
+        if (isSingleMode && currentSingleAns === null) {
+          alert('정답을 선택해주세요.');
+          return;
+        }
+
+        isConfirmed = true;
+        let isCorrect = true;
+
+        if (isSingleMode) {
+          isCorrect = (currentSingleAns === q.answer);
+          currentPicks = [currentSingleAns];
+          inputResults = [isCorrect];
+          
+          document.querySelectorAll('.option').forEach((el, idx) => {
+            el.classList.remove('selected');
+            if (idx === q.answer) el.classList.add('correct');
+            else if (idx === currentSingleAns) el.classList.add('incorrect');
+          });
+
+        } else {
+          let targetAnsArray = q.a || [[q.options ? q.options[q.answer] : ""]];
+          let usedAns = new Array(targetAnsArray.length).fill(false);
+          const inputs = document.querySelectorAll('.ans-input');
+          
+          inputs.forEach((el, idx) => {
+            let val = el.value.trim();
+            currentPicks.push(val);
+            let cleanVal = val.replace(/\s+/g,'').toLowerCase();
+            let matched = false;
+            
+            if (cleanVal !== "" && cleanVal !== "모름") {
+              if (q.t === 'b') {
+                if (targetAnsArray[idx] && targetAnsArray[idx].some(k => cleanVal.includes(k.replace(/\s+/g,'').toLowerCase()))) matched = true;
+              } else {
+                for(let j=0; j<targetAnsArray.length; j++) {
+                  if(!usedAns[j] && targetAnsArray[j].some(k => cleanVal.includes(k.replace(/\s+/g,'').toLowerCase()))) {
+                    matched = true;
+                    usedAns[j] = true;
+                    break;
+                  }
+                }
+              }
+            }
+            inputResults.push(matched);
+            if (!matched) isCorrect = false; 
+          });
+
+          inputs.forEach((el, idx) => {
+            el.readOnly = true;
+            let icon = document.createElement('div');
+            icon.className = 'input-status-icon ' + (inputResults[idx] ? 'correct' : 'incorrect');
+            icon.innerText = inputResults[idx] ? 'O' : 'X';
+            el.parentNode.appendChild(icon);
+          });
+          const idkBtn = document.querySelector('.btn-idk');
+          if(idkBtn) idkBtn.style.display = 'none';
+        }
+
+        const realAnsBox = document.getElementById('exp-real-answer');
+        realAnsBox.innerText = q.e;
+        document.getElementById('exp-box').style.display = 'block';
+
+        userAnswers.push({
+          qIndex: q.originalIdx,
+          displayNum: q.displayNum,
+          stars: q.stars,
+          isSingleMode: isSingleMode,
+          question: q.q,
+          options: q.options || null,
+          correctAnswer: q.answer,
+          isCorrect: isCorrect,
+          picks: currentPicks,
+          corrects: inputResults,
+          exp: q.e
+        });
+
+        nextBtn.innerText = (currentIdx === quizSet.length - 1) ? "결과 보기" : "다음 문제로";
+
+      } else {
+        if (currentIdx < quizSet.length - 1) {
+          currentIdx++;
+          renderQuiz();
+        } else {
+          showResult();
+        }
+      }
+    }
+
+    function showResult() {
+      clearInterval(timerInterval);
+      document.getElementById('screen-study').classList.remove('active');
+      document.getElementById('screen-result').classList.add('active');
+
+      const correctCount = userAnswers.filter(a => a.isCorrect).length;
+      document.getElementById('res-total').innerText = quizSet.length + '문제';
+      document.getElementById('res-correct').innerText = correctCount + '문제';
+      
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      document.getElementById('res-time').innerText = `${m}분 ${s}초`;
+
+      let html = '';
+      userAnswers.forEach((ans) => {
+        html += `<div class="review-card ${ans.isCorrect ? 'correct' : 'incorrect'}">
+                   <span class="badge ${ans.isCorrect ? 'correct' : 'incorrect'}">${ans.isCorrect ? '✓' : '✕'}</span>`;
+        
+        if(ans.stars && ans.stars > 0) {
+          html += `<div class="star-badge" style="margin-left: 32px;">${ans.stars}회 출제</div>`;
+        }
+
+        html += `  <div class="review-q-text" style="margin-top: 4px;">${ans.displayNum}. ${ans.question} <span>(No. ${ans.qIndex})</span></div>
+                   <div style="margin-left: 32px; display: flex; flex-direction: column; gap: 6px;">`;
+
+        if (ans.isSingleMode) {
+          ans.options.forEach((opt, idx) => {
+            let style = 'padding: 8px; border-radius: 6px; border: 1px solid #e0e0e0; font-size: 13px;';
+            const isAnsCorrect = (idx === ans.correctAnswer);
+            const isUserPicked = (idx === ans.picks[0]);
+            if (isAnsCorrect) style += ' background: var(--success-bg); border-color: var(--success); font-weight: bold; color: var(--success);';
+            else if (isUserPicked && !isAnsCorrect) style += ' background: var(--danger-bg); border-color: var(--danger); text-decoration: line-through; color: var(--danger);';
+            html += `<div style="${style}">${idx + 1}. ${opt}</div>`;
+          });
+        } else {
+          ans.picks.forEach((p, idx) => {
+            let style = ans.corrects[idx] ? 'correct' : 'incorrect';
+            let label = `답안 ${idx+1}`;
+            html += `<div class="review-ans-row">
+                       <div class="review-ans-label">${label}</div>
+                       <div class="review-ans-val ${style}">${p || '미입력'}</div>
+                     </div>`;
+          });
+        }
+
+        html += `  </div>
+                   <div class="review-exp" style="margin-left:32px;"><strong>모범 답안 및 원본 내용:</strong><br>${ans.exp}</div>
+                 </div>`;
+      });
+      document.getElementById('review-list').innerHTML = html;
+    }
+
+    function goToMain() {
+      clearInterval(timerInterval);
+      document.getElementById('screen-study').classList.remove('active');
+      document.getElementById('screen-result').classList.remove('active');
+      document.getElementById('screen-main').classList.add('active');
+    }
+  </script>
+</body>
+</html>
